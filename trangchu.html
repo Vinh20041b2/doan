@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Giám sát Cảm biến MQTT</title>
+    <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; margin: 0; padding: 0; }
+        .navbar { background-color: #007bff; display: flex; justify-content: center; padding: 10px 0; }
+        .navbar a { color: white; padding: 14px 20px; text-decoration: none; font-size: 18px; }
+        .navbar a:hover { background-color: #0056b3; border-radius: 5px; }
+        .section { margin: 20px; }
+        .container { display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; }
+        .card { background: #7bdff2; padding: 20px; border-radius: 10px; box-shadow: 2px 2px 10px gray; width: 200px; text-align: center; }
+        .slider { width: 150px; }
+        .switch-container { display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 10px; }
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 24px;
+        }
+        .switch input { display: none; }
+        .slider-switch {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 24px;
+        }
+        .slider-switch:before {
+            position: absolute;
+            content: "";
+            height: 20px; width: 20px;
+            left: 2px; bottom: 2px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        .switch input:checked + .slider-switch {
+            background-color: #28a745;
+        }
+        .switch input:checked + .slider-switch:before {
+            transform: translateX(26px);
+        }
+        .send-button {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin-top: 20px;
+            cursor: pointer;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        .send-button:hover { background-color: #218838; }
+        #debug {
+            margin-top: 30px;
+            padding: 10px;
+            background: #222;
+            color: #0f0;
+            text-align: left;
+            font-family: monospace;
+            height: 200px;
+            overflow-y: auto;
+            border-radius: 5px;
+            width: 90%;
+            margin: auto;
+        }
+        .timestamp { color: #999; font-size: 0.85em; }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <a href="trangchu.html">Trang chủ</a>
+        <a href="tracuu.html">Tra cứu</a>
+        <a href="testwweb.html">Cài đặt</a>
+        <a href="index.html">Đăng xuất</a>
+    </div>
+
+    <h2>Hệ thống Giám sát Cảm biến MQTT</h2>
+
+    <div class="section">
+        <h3>Thông số Cảm biến ESP1</h3>
+<div class="container">
+    <div class="card">Nhiệt độ: <span id="temperature1">--</span> °C</div>
+    <div class="card">Độ ẩm: <span id="humidity1">--</span> %</div>
+    <div class="card">Ánh sáng: <span id="light1">--</span> lux</div>
+    <div class="card">Độ ẩm đất: <span id="soil_moisture1">--</span></div>
+</div>
+
+<h3>Thông số Cảm biến ESP2</h3>
+<div class="container">
+    <div class="card">Nhiệt độ: <span id="temperature2">--</span> °C</div>
+    <div class="card">Độ ẩm: <span id="humidity2">--</span> %</div>
+    <div class="card">Ánh sáng: <span id="light2">--</span> lux</div>
+    <div class="card">Độ ẩm đất: <span id="soil_moisture2">--</span></div>
+</div>
+    </div>
+
+    <!-- Điều khiển ESP1 -->
+    <div class="section">
+        <h3>Điều khiển ESP1</h3>
+        <div class="container">
+            <div class="card">
+                Máy sưởi:<br>
+                <input type="range" id="heaterSlider1" min="0" max="100" value="0" class="slider">
+                <span id="heaterValue1">0</span>°C
+            </div>
+            <div class="card">
+                Quạt:<br>
+                <input type="range" id="fanLevel1" min="0" max="3" value="0" class="slider">
+                <span id="fanValue1">0</span>/3
+            </div>
+            <div class="card">
+                Đèn:<br>
+                <label class="switch">
+                    <input type="checkbox" id="lightSwitch1">
+                    <span class="slider-switch"></span>
+                </label>
+                <div id="lightStatus1">OFF</div>
+            </div>
+            <div class="card">
+                Máy bơm:<br>
+                <input type="range" id="pumpSwitch1" min="0" max="100" value="0" class="slider">
+                <span id="pumpValue1">0</span>/100
+            </div>
+        </div>
+        <button class="send-button" onclick="sendControlData(1)">Gửi Dữ Liệu ESP1</button>
+    </div>
+
+    <!-- Điều khiển ESP2 -->
+    <div class="section">
+        <h3>Điều khiển ESP2</h3>
+        <div class="container">
+            <div class="card">
+                Máy sưởi:<br>
+                <input type="range" id="heaterSlider2" min="0" max="100" value="0" class="slider">
+                <span id="heaterValue2">0</span>°C
+            </div>
+            <div class="card">
+                Quạt:<br>
+                <input type="range" id="fanLevel2" min="0" max="3" value="0" class="slider">
+                <span id="fanValue2">0</span>/3
+            </div>
+            <div class="card">
+                Đèn:<br>
+                <label class="switch">
+                    <input type="checkbox" id="lightSwitch2">
+                    <span class="slider-switch"></span>
+                </label>
+                <div id="lightStatus2">OFF</div>
+            </div>
+            <div class="card">
+                Máy bơm:<br>
+                <input type="range" id="pumpSwitch2" min="0" max="100" value="0" class="slider">
+                <span id="pumpValue2">0</span>/100
+            </div>
+        </div>
+        <button class="send-button" onclick="sendControlData(2)">Gửi Dữ Liệu ESP2</button>
+    </div>
+
+    <h3>Debug Log</h3>
+    <pre id="debug"></pre>
+
+    <script>
+        const broker = "wss://e8fa3a03f84a4ba6ae0a38cb4c21a9e6.s1.eu.hivemq.cloud:8884/mqtt";
+        const topics = ["esp/gui", "esp/dk"];
+        const clientId = "webClient_" + Math.random().toString(16).substr(2, 8);
+        const username = "vuvuvu";
+        const password = "1234567890Aa";
+
+        const client = mqtt.connect(broker, {
+            clientId,
+            username,
+            password,
+            clean: true
+        });
+
+        function logDebug(message, isSent = false) {
+            const debugBox = document.getElementById("debug");
+            const timestamp = new Date().toLocaleTimeString();
+            const prefix = isSent ? "\uD83D\uDCE4" : "\uD83D\uDCE9";
+            debugBox.innerHTML += `\n<span class="timestamp">${timestamp}</span> ${prefix} ${message}`;
+            debugBox.scrollTop = debugBox.scrollHeight;
+        }
+
+        function sendControlData(id) {
+            const controlData = {
+                name: `ESP${id}`,
+                control_den: document.getElementById(`lightSwitch${id}`).checked ? 1 : 0,
+                control_quat: Number(document.getElementById(`fanLevel${id}`).value),
+                control_maybom: Number(document.getElementById(`pumpSwitch${id}`).value),
+                may_suoi: Number(document.getElementById(`heaterSlider${id}`).value),
+                time: new Date().toISOString().replace("T", " ").substring(0, 19)
+            };
+            const jsonData = JSON.stringify(controlData);
+            logDebug(`Gửi dữ liệu ESP${id}: ${jsonData}`, true);
+            client.publish("esp/nhan", jsonData);
+            client.publish("esp/dk", jsonData);
+        }
+
+        client.on("connect", () => {
+            logDebug("🟢 Kết nối MQTT thành công!");
+            client.subscribe(topics, (err) => {
+                if (!err) {
+                    logDebug(`✅ Đã đăng ký các topic: ${topics.join(", ")}`);
+                    const startMessage = { bat_dau: true };
+                    const startJson = JSON.stringify(startMessage);
+                    logDebug(`📤 Gửi dữ liệu khởi động: ${startJson}`);
+                    client.publish("esp/nhan", startJson);
+                } else {
+                    logDebug("❌ Lỗi khi đăng ký topic!");
+                }
+            });
+        });
+
+        client.on("message", (topic, message) => {
+            const data = JSON.parse(message.toString());
+            logDebug(`Nhận dữ liệu từ topic ${topic}: ${message}`);
+
+            if (topic === "esp/gui") {
+    const espIdStr = data.name; // ESP1 hoặc ESP2
+    const espId = parseInt(espIdStr.replace("ESP", ""));
+
+    if (espId === 1 || espId === 2) {
+        document.getElementById(`temperature${espId}`).innerText = data.sensor_nhietdo;
+        document.getElementById(`humidity${espId}`).innerText = data.sensor_doam;
+        document.getElementById(`light${espId}`).innerText = data.sensor_anhsang;
+        document.getElementById(`soil_moisture${espId}`).innerText = data.sensor_doamdat;
+    }
+}
+
+
+            if (topic === "esp/dk") {
+                const espIdStr = data.name;
+                const espId = parseInt(espIdStr.replace("ESP", ""));
+                if (espId === 1 || espId === 2) {
+                    document.getElementById(`lightSwitch${espId}`).checked = data.control_den === 1;
+                    document.getElementById(`lightStatus${espId}`).innerText = data.control_den === 1 ? "ON" : "OFF";
+                    document.getElementById(`fanLevel${espId}`).value = data.control_quat;
+                    document.getElementById(`fanValue${espId}`).innerText = data.control_quat;
+                    document.getElementById(`heaterSlider${espId}`).value = data.may_suoi;
+                    document.getElementById(`heaterValue${espId}`).innerText = data.may_suoi;
+                    document.getElementById(`pumpSwitch${espId}`).value = data.control_maybom;
+                    document.getElementById(`pumpValue${espId}`).innerText = data.control_maybom;
+                }
+            }
+        });
+
+        function setupSliders(id) {
+            document.getElementById(`heaterSlider${id}`).addEventListener("input", function () {
+                document.getElementById(`heaterValue${id}`).innerText = this.value;
+            });
+            document.getElementById(`fanLevel${id}`).addEventListener("input", function () {
+                document.getElementById(`fanValue${id}`).innerText = this.value;
+            });
+            document.getElementById(`pumpSwitch${id}`).addEventListener("input", function () {
+                document.getElementById(`pumpValue${id}`).innerText = this.value;
+            });
+        }
+
+        setupSliders(1);
+        setupSliders(2);
+    </script>
+</body>
+</html>
